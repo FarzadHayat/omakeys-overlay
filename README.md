@@ -6,6 +6,8 @@
 
 ![omakeys overlay on an Omarchy desktop](docs/screenshot.png)
 
+https://github.com/user-attachments/assets/c05d9eff-77c4-4aba-a2aa-33a69ea80f7c
+
 - Works with any keyboard. Laptop, USB and Bluetooth boards get an ANSI layout that lights up as you type.
 - QMK boards get the full layer map. The board is described by one small TOML file.
 - Follows your Omarchy theme. Switch themes and the overlay recolors, no restart.
