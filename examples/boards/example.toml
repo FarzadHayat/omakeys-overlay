@@ -1,0 +1,46 @@
+# Board profile for a QMK keyboard with Raw HID (omakeys_notify / KeyPeek / LayerLens).
+# Copy to ~/.config/omakeys/boards/<name>.toml and edit.
+# Find vid/pid with `omakeys doctor` or `lsusb`.
+#
+# After adding or editing a board file:
+#   1. Re-run ./dist/install-desktop.sh so udev covers the new ids
+#   2. Restart the daemon (install script does this), or wait a couple of
+#      seconds — the daemon rescans boards/*.toml while running
+#
+# Evdev-only layouts (laptop / BT without Raw HID) are NOT defined here —
+# use the built-in Generic (ANSI TKL) or Samsung Trio 500 profiles. Map
+# unknown keycodes with `omakeys keys`.
+name = "my-split-36"
+vid = 0x1234
+pid = 0x5678
+
+# Layer names in order, layer 0 first. Length should match your firmware.
+# If you omit `max_layer`, it defaults to layers.len() - 1 (or 7 when layers
+# is empty).
+layers = ["BASE", "NAV", "SYM", "FUN"]
+# max_layer = 3
+
+# Split boards: columns from this one on move right by split_gap key widths.
+split_col = 5
+split_gap = 1.5
+
+# Matrix size. Optional: defaults to the largest row and col used below.
+# rows = 4
+# cols = 10
+
+# One entry per physical key: its switch position in the matrix. The overlay
+# places keys at x = col, y = row (plus the split gap). For other shapes give
+# x, y (in key units) and w, h, as in QMK's info.json layout.
+keys = [
+  { row = 0, col = 0 }, { row = 0, col = 1 }, { row = 0, col = 2 }, { row = 0, col = 3 }, { row = 0, col = 4 },
+  { row = 0, col = 5 }, { row = 0, col = 6 }, { row = 0, col = 7 }, { row = 0, col = 8 }, { row = 0, col = 9 },
+  { row = 1, col = 0 }, { row = 1, col = 1 }, { row = 1, col = 2 }, { row = 1, col = 3 }, { row = 1, col = 4 },
+  { row = 1, col = 5 }, { row = 1, col = 6 }, { row = 1, col = 7 }, { row = 1, col = 8 }, { row = 1, col = 9 },
+]
+
+# Leave these off unless your firmware is the Omakeys LoremIpsum36 rsta
+# keymap (QK_KB_* macros for game / one-hand). Third-party boards must keep
+# custom_keycodes unset/false.
+# custom_keycodes = false
+# game_layer = 6
+# one_hand_layer = 9

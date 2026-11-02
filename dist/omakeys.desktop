@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Omakeys
+Comment=Live layer map for Omakeys keyboard
+Exec=omakeys run
+Icon=omakeys
+Terminal=false
+Categories=Utility;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+Keywords=keyboard;qmk;omakeys;

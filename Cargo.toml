@@ -1,0 +1,30 @@
+[package]
+name = "omakeys"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Live layer map for Omakeys on Omarchy/Hyprland"
+
+[[bin]]
+name = "omakeys"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+gtk = { version = "0.9", package = "gtk4", features = ["v4_12"] }
+gtk4-layer-shell = "0.4"
+hidapi = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+thiserror = "2"
+anyhow = "1"
+dirs = "6"
+notify = "7"
+libc = "0.2"
+pango = "0.20"
+pangocairo = "0.20"
+cairo-rs = { version = "0.20", features = ["png"] }
+
+[dev-dependencies]
+pretty_assertions = "1"

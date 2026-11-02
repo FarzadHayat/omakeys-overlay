@@ -1,0 +1,11 @@
+[Unit]
+Description=Omakeys live layer map
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.cargo/bin/omakeys run
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

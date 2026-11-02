@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "omakeys",
+  "name": "Omakeys",
+  "version": "0.1.0",
+  "author": "Omakeys",
+  "license": "MIT",
+  "description": "Live layer map controls: toggle overlay, settings, quit.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Omakeys",
+    "description": "Toggle the Omakeys overlay and edit visibility settings",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
