@@ -103,6 +103,10 @@ cargo run -- run
 
 Commands: `omakeys run | toggle | settings | boards | keys | doctor | udev-rules`.
 
+## More for Omarchy
+
+See everything else I've built for Omarchy, each with a one-line install, at **[omarchy.farzadhayat.dev](https://omarchy.farzadhayat.dev)**.
+
 ## License
 
 MIT, see [LICENSE](LICENSE). Made for the Omakeys LoremIpsum36 keyboard. The matching keyboard firmware is a separate repo, [FarzadHayat/omakeys](https://github.com/FarzadHayat/omakeys) (GPL-3.0).
