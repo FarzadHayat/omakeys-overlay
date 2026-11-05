@@ -16,7 +16,11 @@ Item {
   property var options: []
 
   property color foreground: Commons.Color.popups.text
-  property color background: Commons.Color.popups.background
+  // The option list draws inside the panel, where the compositor cannot blur
+  // what is under it, so a theme's see-through popup color stays solid here or
+  // the fields below show through the options.
+  property color background: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g,
+    Commons.Color.popups.background.b, 1)
   property color popupBorder: Commons.Color.popups.border
   property color accent: Commons.Color.accent
   readonly property var popupBorderSpec: Border.localOrSurfaceSpec("popups", "border", popupBorder, Commons.Color.popups.border, Style.normalBorderWidth)
