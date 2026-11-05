@@ -327,9 +327,7 @@ impl OverlayWindow {
         }
         self.home.set(frame.anchor);
         set_window_anchor(&self.window, self.dodged.get().unwrap_or(frame.anchor));
-        // Opacity fades the panel background only (see draw_keyboard), so
-        // key legends stay crisp.
-        self.window.set_opacity(1.0);
+        self.window.set_opacity(frame.opacity.clamp(0.05, 1.0));
 
         if frame.visible && !frame.keys.is_empty() {
             let paint = self.paint_scale(&frame.keys, frame.scale);
@@ -675,7 +673,7 @@ fn draw_keyboard(
     let radius = 6.0 * scale;
 
     let (w, h) = content_size(&frame.keys, scale);
-    draw_panel(cr, &theme.panel, frame.opacity.clamp(0.05, 1.0), w, h);
+    draw_panel(cr, &theme.panel, w, h);
 
     cr.set_source_rgba(
         f64::from(fg.red()),
@@ -926,17 +924,17 @@ fn draw_tooltip(
 
 /// The panel behind the keys, styled like an Omarchy popup: the theme's popup
 /// background color, its solid or gradient border, and Hyprland's corner
-/// rounding. How see-through it is stays the overlay's own opacity setting:
-/// nothing blurs behind the overlay, so a glass theme's popup alpha would let
-/// the windows below show sharply through the keys.
-fn draw_panel(cr: &gtk::cairo::Context, panel: &Panel, opacity: f64, w: f64, h: f64) {
+/// rounding. The panel stays nearly solid and the opacity setting fades the
+/// whole window: nothing blurs behind the overlay, so a glass theme's popup
+/// alpha would let the windows below show sharply through the keys.
+fn draw_panel(cr: &gtk::cairo::Context, panel: &Panel, w: f64, h: f64) {
     let bw = panel.border_width;
     let inset = bw / 2.0;
     let (pw, ph) = ((w - bw).max(0.0), (h - bw).max(0.0));
     let radius = (panel.radius - inset).max(0.0);
 
     let bg = panel.background;
-    cr.set_source_rgba(bg.r, bg.g, bg.b, opacity);
+    cr.set_source_rgba(bg.r, bg.g, bg.b, 0.92);
     rounded_rect(cr, inset, inset, pw, ph, radius);
     let _ = cr.fill();
 

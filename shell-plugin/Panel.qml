@@ -454,8 +454,8 @@ Panel {
               spacing: Style.spacing.md
               Text {
                 textFormat: Text.PlainText
-                // Index 0..16 → 20%..100% in 5% steps (integer snap like timeout/size).
-                text: "Opacity  " + (20 + Math.round(opacitySlider.liveValue) * 5) + "%"
+                // Index 0..8 → 20%..100% in 10% steps (integer snap like timeout/size).
+                text: "Opacity  " + (20 + Math.round(opacitySlider.liveValue) * 10) + "%"
                 color: root.dim
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -464,13 +464,13 @@ Panel {
                 id: opacitySlider
                 width: parent.width
                 bar: root.bar
-                value: Math.min(16, Math.max(0, Math.round((((Number(root.cfg.opacity) || 0.8) * 100) - 20) / 5)))
+                value: Math.min(8, Math.max(0, Math.round((((Number(root.cfg.opacity) || 0.8) * 100) - 20) / 10)))
                 minimum: 0
-                maximum: 16
+                maximum: 8
                 step: 1
                 integer: true
                 onReleased: function (v) {
-                  root.patchCfg("opacity", (20 + Math.round(v) * 5) / 100)
+                  root.patchCfg("opacity", (20 + Math.round(v) * 10) / 100)
                 }
               }
             }
