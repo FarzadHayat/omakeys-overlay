@@ -1,4 +1,5 @@
-//! Omarchy theme colors from `~/.local/state/omarchy/current/theme/colors.toml`.
+//! Omarchy theme colors from `~/.local/state/omarchy/current/theme/colors.toml`,
+//! and the panel look (background, border, corners) Omarchy gives its own popups.
 
 use std::cell::Cell;
 use std::fs;
@@ -22,6 +23,40 @@ pub struct Theme {
     pub accent: String,
     pub muted: String,
     pub selection: String,
+    pub panel: Panel,
+}
+
+/// A color with alpha, each channel 0 to 1.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Rgba {
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
+    pub a: f64,
+}
+
+/// The overlay's own surface, styled like an Omarchy popup: the theme's
+/// `[popups]` background and border, and Hyprland's window rounding.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Panel {
+    pub background: Rgba,
+    /// One color is a solid border; more are a gradient at `border_angle`.
+    pub border: Vec<Rgba>,
+    pub border_angle: f64,
+    pub border_width: f64,
+    pub radius: f64,
+}
+
+impl Default for Panel {
+    fn default() -> Self {
+        Self {
+            background: Rgba { r: 0.07, g: 0.11, b: 0.17, a: 1.0 },
+            border: Vec::new(),
+            border_angle: 0.0,
+            border_width: 0.0,
+            radius: 0.0,
+        }
+    }
 }
 
 impl Default for Theme {
@@ -32,6 +67,7 @@ impl Default for Theme {
             accent: "#e8b84a".into(),
             muted: "#4d5e75".into(),
             selection: "#2b2418".into(),
+            panel: Panel::default(),
         }
     }
 }
@@ -84,10 +120,118 @@ pub fn theme_from_str(s: &str) -> Theme {
 }
 
 pub fn load_omarchy_theme() -> Theme {
-    match fs::read_to_string(theme_path()) {
+    let mut theme = match fs::read_to_string(theme_path()) {
         Ok(s) => theme_from_str(&s),
         Err(_) => Theme::default(),
+    };
+    let read = |p: PathBuf| fs::read_to_string(p).unwrap_or_default();
+    let theme_shell = read(omarchy_current_dir().join(THEME_DIR).join("shell.toml"));
+    let user_shell = dirs::home_dir()
+        .map(|h| read(h.join(".config/omarchy/shell.toml")))
+        .unwrap_or_default();
+    theme.panel = panel_from_shell(&theme, &theme_shell, &user_shell, hyprland_rounding());
+    theme
+}
+
+/// Hyprland's `decoration:rounding`, which Omarchy's popups use for corners.
+fn hyprland_rounding() -> f64 {
+    std::process::Command::new("hyprctl")
+        .args(["getoption", "decoration:rounding", "-j"])
+        .output()
+        .ok()
+        .and_then(|o| serde_json::from_slice::<serde_json::Value>(&o.stdout).ok())
+        .and_then(|v| v.get("int").and_then(serde_json::Value::as_f64))
+        .unwrap_or(0.0)
+        .max(0.0)
+}
+
+/// `[popups]` from the theme's shell.toml with the user's shell.toml on top,
+/// resolved the way Omarchy does for its own popups. Missing keys fall back to
+/// the theme's background and no border, the overlay's look before.
+pub fn panel_from_shell(theme: &Theme, theme_shell: &str, user_shell: &str, radius: f64) -> Panel {
+    let docs: Vec<toml::Table> = [theme_shell, user_shell]
+        .iter()
+        .filter_map(|s| s.parse::<toml::Table>().ok())
+        .collect();
+    let value = |section: &str, key: &str| -> Option<toml::Value> {
+        docs.iter()
+            .rev()
+            .find_map(|d| d.get(section).and_then(|t| t.get(key)).cloned())
+    };
+    let text = |section: &str, key: &str| value(section, key).and_then(|v| v.as_str().map(str::to_owned));
+    let number = |section: &str, key: &str| {
+        value(section, key).and_then(|v| v.as_float().or_else(|| v.as_integer().map(|i| i as f64)))
+    };
+    // "hyprland.active-border" style references point at another key.
+    let resolve = |raw: String| -> String {
+        let t = raw.trim();
+        match t.split_once('.') {
+            Some((sec, key)) if !t.contains(' ') && !t.starts_with('#') && !t.starts_with("rgb") => {
+                text(sec, key).unwrap_or_default()
+            }
+            _ => t.to_owned(),
+        }
+    };
+
+    let fallback_bg = parse_color(&theme.background).unwrap_or(Panel::default().background);
+    let bg_alpha = number("popups", "background-alpha").unwrap_or(1.0).clamp(0.0, 1.0);
+    let bg = text("popups", "background")
+        .map(resolve)
+        .and_then(|s| parse_color(&s))
+        .unwrap_or(fallback_bg);
+
+    let border_alpha = number("popups", "border-alpha").unwrap_or(1.0).clamp(0.0, 1.0);
+    let (mut border, mut angle) = (Vec::new(), 0.0);
+    if let Some(raw) = text("popups", "border").map(resolve) {
+        for part in raw.split_whitespace() {
+            if let Some(deg) = part.strip_suffix("deg").and_then(|d| d.parse::<f64>().ok()) {
+                angle = deg;
+            } else if let Some(c) = parse_color(part) {
+                border.push(Rgba { a: c.a * border_alpha, ..c });
+            }
+        }
     }
+    let border_width = if border.is_empty() {
+        0.0
+    } else {
+        value("popups", "border-width")
+            .and_then(|v| match v {
+                toml::Value::String(s) => s.split_whitespace().next().and_then(|n| n.parse().ok()),
+                toml::Value::Integer(i) => Some(i as f64),
+                toml::Value::Float(f) => Some(f),
+                _ => None,
+            })
+            .unwrap_or(2.0)
+            .max(0.0)
+    };
+
+    Panel {
+        background: Rgba { a: bg.a * bg_alpha, ..bg },
+        border,
+        border_angle: angle,
+        border_width,
+        radius,
+    }
+}
+
+/// `#rrggbb`, `#rrggbbaa`, `rgb(rrggbb)` or `rgba(rrggbbaa)`.
+pub fn parse_color(s: &str) -> Option<Rgba> {
+    let s = s.trim();
+    let hex = s
+        .strip_prefix("rgba(")
+        .or_else(|| s.strip_prefix("rgb("))
+        .and_then(|h| h.strip_suffix(')'))
+        .or_else(|| s.strip_prefix('#'))?;
+    if !(hex.len() == 6 || hex.len() == 8) || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    let byte = |i: usize| f64::from(u8::from_str_radix(&hex[i..i + 2], 16).unwrap_or(0)) / 255.0;
+    Some(Rgba {
+        r: byte(0),
+        g: byte(2),
+        b: byte(4),
+        a: if hex.len() == 8 { byte(6) } else { 1.0 },
+    })
 }
 
 pub fn watch_omarchy_theme(callback: impl Fn() + 'static) -> anyhow::Result<Vec<gio::FileMonitor>> {
@@ -203,5 +347,41 @@ selection = "#2b2418"
         let t = theme_from_str(s);
         assert_eq!(t.accent, "#e8b84a");
         assert_eq!(t.background, "#121c2b");
+    }
+
+    #[test]
+    fn panel_follows_popups_with_user_override_and_border_reference() {
+        let theme_shell = r##"
+[hyprland]
+active-border = "rgba(ffffff66) rgba(ffffff1a) 45deg"
+
+[popups]
+background = "#1c1c1e"
+background-alpha = 0.55
+border = "hyprland.active-border"
+"##;
+        let user_shell = "[popups]\nbackground-alpha = 0.9\n";
+        let p = panel_from_shell(&Theme::default(), theme_shell, user_shell, 16.0);
+        assert!((p.background.a - 0.9).abs() < 1e-9, "user alpha wins");
+        assert!((p.background.r - 0x1c as f64 / 255.0).abs() < 1e-9);
+        assert_eq!(p.border.len(), 2);
+        assert!((p.border[0].a - 0x66 as f64 / 255.0).abs() < 1e-9);
+        assert_eq!(p.border_angle, 45.0);
+        assert_eq!(p.border_width, 2.0);
+        assert_eq!(p.radius, 16.0);
+    }
+
+    #[test]
+    fn panel_without_shell_toml_keeps_the_plain_background() {
+        let p = panel_from_shell(&Theme::default(), "", "", 0.0);
+        assert_eq!(p.background, parse_color("#121c2b").unwrap());
+        assert!(p.border.is_empty());
+        assert_eq!(p.border_width, 0.0);
+    }
+
+    #[test]
+    fn unrendered_template_color_falls_back_to_theme_background() {
+        let p = panel_from_shell(&Theme::default(), "[popups]\nbackground = \"{{ background }}\"\n", "", 0.0);
+        assert_eq!(p.background, parse_color("#121c2b").unwrap());
     }
 }

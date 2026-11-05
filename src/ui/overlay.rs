@@ -19,7 +19,7 @@ use crate::board::OMARCHY_SUPER;
 use crate::core::config::{Anchor, HoverMode};
 use crate::core::output::send;
 use crate::core::state::{is_dual_role, Frame, FrameKind, KeyView, OverlayCore};
-use crate::ui::theme::Theme;
+use crate::ui::theme::{Panel, Theme};
 
 const UNIT_PX: f64 = 44.0;
 const PAD: f64 = 12.0;
@@ -70,6 +70,17 @@ impl OverlayWindow {
             .decorated(false)
             .resizable(false)
             .build();
+
+        // The panel draws its own rounded background, so the window must not
+        // paint GTK's square one behind its corners.
+        window.add_css_class("omakeys-overlay");
+        let css = gtk::CssProvider::new();
+        css.load_from_string("window.omakeys-overlay { background: none; box-shadow: none; }");
+        gtk::style_context_add_provider_for_display(
+            &gtk::prelude::WidgetExt::display(&window),
+            &css,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
 
         window.init_layer_shell();
         window.set_namespace("omakeys");
@@ -316,7 +327,9 @@ impl OverlayWindow {
         }
         self.home.set(frame.anchor);
         set_window_anchor(&self.window, self.dodged.get().unwrap_or(frame.anchor));
-        self.window.set_opacity(frame.opacity.clamp(0.05, 1.0));
+        // Opacity fades the panel background only (see draw_keyboard), so
+        // key legends stay crisp.
+        self.window.set_opacity(1.0);
 
         if frame.visible && !frame.keys.is_empty() {
             let paint = self.paint_scale(&frame.keys, frame.scale);
@@ -662,14 +675,7 @@ fn draw_keyboard(
     let radius = 6.0 * scale;
 
     let (w, h) = content_size(&frame.keys, scale);
-    cr.set_source_rgba(
-        f64::from(bg.red()),
-        f64::from(bg.green()),
-        f64::from(bg.blue()),
-        0.92,
-    );
-    cr.rectangle(0.0, 0.0, w, h);
-    let _ = cr.fill();
+    draw_panel(cr, &theme.panel, frame.opacity.clamp(0.05, 1.0), w, h);
 
     cr.set_source_rgba(
         f64::from(fg.red()),
@@ -916,6 +922,46 @@ fn draw_tooltip(
     );
     cr.move_to(bx + box_pad, by + box_pad);
     show_layout(cr, &layout);
+}
+
+/// The panel behind the keys, styled like an Omarchy popup: the theme's popup
+/// background color, its solid or gradient border, and Hyprland's corner
+/// rounding. How see-through it is stays the overlay's own opacity setting:
+/// nothing blurs behind the overlay, so a glass theme's popup alpha would let
+/// the windows below show sharply through the keys.
+fn draw_panel(cr: &gtk::cairo::Context, panel: &Panel, opacity: f64, w: f64, h: f64) {
+    let bw = panel.border_width;
+    let inset = bw / 2.0;
+    let (pw, ph) = ((w - bw).max(0.0), (h - bw).max(0.0));
+    let radius = (panel.radius - inset).max(0.0);
+
+    let bg = panel.background;
+    cr.set_source_rgba(bg.r, bg.g, bg.b, opacity);
+    rounded_rect(cr, inset, inset, pw, ph, radius);
+    let _ = cr.fill();
+
+    if bw <= 0.0 || panel.border.is_empty() {
+        return;
+    }
+    rounded_rect(cr, inset, inset, pw, ph, radius);
+    cr.set_line_width(bw);
+    if let [c] = panel.border.as_slice() {
+        cr.set_source_rgba(c.r, c.g, c.b, c.a);
+    } else {
+        // Same endpoints Omarchy uses for its gradient borders.
+        let rad = panel.border_angle.to_radians();
+        let (dx, dy) = (rad.cos(), rad.sin());
+        let len = ((w * dx).abs() + (h * dy).abs()) / 2.0;
+        let (cx, cy) = (w / 2.0, h / 2.0);
+        let gradient =
+            gtk::cairo::LinearGradient::new(cx - dx * len, cy - dy * len, cx + dx * len, cy + dy * len);
+        let last = (panel.border.len() - 1) as f64;
+        for (i, c) in panel.border.iter().enumerate() {
+            gradient.add_color_stop_rgba(i as f64 / last, c.r, c.g, c.b, c.a);
+        }
+        let _ = cr.set_source(&gradient);
+    }
+    let _ = cr.stroke();
 }
 
 fn rounded_rect(cr: &gtk::cairo::Context, x: f64, y: f64, w: f64, h: f64, r: f64) {
