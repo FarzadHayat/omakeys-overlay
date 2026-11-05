@@ -56,7 +56,6 @@ BarWidget {
   Component {
     id: glyphComponent
     Item {
-      anchors.fill: parent
       Image {
         id: glyph
         anchors.centerIn: parent
@@ -72,7 +71,7 @@ BarWidget {
         anchors.fill: glyph
         source: glyph
         colorization: 1.0
-        colorizationColor: root.bar ? root.bar.foreground : Color.foreground
+        colorizationColor: buttonItem.foreground
       }
     }
   }

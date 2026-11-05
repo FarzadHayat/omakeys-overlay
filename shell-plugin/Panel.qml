@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "Config.js" as Config
 
@@ -25,10 +26,10 @@ Panel {
   property var cfg: Config.defaultConfig()
 
   readonly property string badgeText: !daemonUp ? "Offline" : (overlayHidden ? "Hidden" : "Live")
-  readonly property color badgeColor: !daemonUp || overlayHidden ? root.dim : Color.accent
+  readonly property color badgeColor: !daemonUp || overlayHidden ? root.dim : Commons.Color.accent
   readonly property bool badgeHot: daemonUp && !overlayHidden
 
-  readonly property color foreground: bar ? bar.foreground : Color.foreground
+  readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   // install-desktop.sh pins this to the installed binary's absolute path.
@@ -323,7 +324,7 @@ Panel {
                 implicitHeight: liveLabel.implicitHeight + Style.space(6)
                 radius: Style.cornerRadius
                 color: root.badgeHot
-                  ? Style.selectedFillFor(root.foreground, Color.accent)
+                  ? Style.selectedFillFor(root.foreground, Commons.Color.accent)
                   : "transparent"
                 borderSpec: Border.controlSpec(
                   root.badgeHot ? "selected" : "normal",
@@ -350,7 +351,7 @@ Panel {
             width: parent.width
             textFormat: Text.PlainText
             text: root.errorText
-            color: root.bar ? root.bar.urgent : Color.urgent
+            color: root.bar ? root.bar.urgent : Commons.Color.urgent
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
             wrapMode: Text.WordWrap
