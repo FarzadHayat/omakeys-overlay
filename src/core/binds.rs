@@ -383,6 +383,9 @@ pub fn glyph_for(description: &str) -> Option<String> {
     if lowered.starts_with("move window to group") {
         return Some("\u{f047}".to_string());
     }
+    if lowered.starts_with("switch to group window") {
+        return Some("\u{f247}".to_string());
+    }
     if lowered.starts_with("swap window") {
         return Some("\u{f0ec}".to_string());
     }
@@ -577,6 +580,41 @@ const GLYPHS: &[(&str, &str)] = &[
     ("brightness maximum", "\u{f185}"),
     ("brightness down", "\u{f185}"),
     ("brightness up", "\u{f185}"),
+    ("apps", "\u{f0c9}"),
+    ("cycle workspace layout", "\u{f009}"),
+    ("cycle workspace layout back", "\u{f009}"),
+    ("direct input for the terminal prefix", "\u{f120}"),
+    ("disable touchpad", "\u{f0a6}"),
+    ("enable touchpad", "\u{f0a6}"),
+    ("toggle touchpad", "\u{f0a6}"),
+    ("dismiss", "\u{f1f6}"),
+    ("eject media", "\u{f052}"),
+    ("keyboard brightness down", "\u{f11c}"),
+    ("keyboard brightness up", "\u{f11c}"),
+    ("minimize window to the dock", "\u{f2d1}"),
+    ("move window to quake console", "\u{f120}"),
+    ("toggle quake console", "\u{f120}"),
+    ("opensidian", "\u{f15c}"),
+    ("pause", "\u{f04c}"),
+    ("power menu", "\u{f011}"),
+    ("read aloud faster", "\u{f04e}"),
+    ("read aloud slower", "\u{f04a}"),
+    ("read selection aloud", "\u{f028}"),
+    ("record with omareel", "\u{f03d}"),
+    ("restore window width", "\u{f07e}"),
+    ("save window width", "\u{f07e}"),
+    ("scroll active workspace backward", "\u{f0a8}"),
+    ("scroll active workspace forward", "\u{f0a9}"),
+    ("super space", "\u{f0c9}"),
+    ("superwhisper: cancel", "\u{f00d}"),
+    ("superwhisper: toggle", "\u{f130}"),
+    ("switch input language", "\u{f0ac}"),
+    ("switch input language back", "\u{f0ac}"),
+    ("toggle full screen desktop", "\u{f065}"),
+    ("toggle laptop display", "\u{f108}"),
+    ("toggle laptop display mirroring", "\u{f108}"),
+    ("toggle transparency on a window", "\u{f06e}"),
+    ("world clock", "\u{f017}"),
 ];
 
 #[cfg(test)]
